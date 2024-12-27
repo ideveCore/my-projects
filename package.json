@@ -14,7 +14,7 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
-		"db:start": "docker compose up",
+		"db:start": "podman compose up -d",
 		"db:push": "drizzle-kit push",
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio"
@@ -30,6 +30,9 @@
 		"eslint": "^9.7.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.36.0",
+		"flowbite": "^2.5.2",
+		"flowbite-svelte": "^0.47.4",
+		"flowbite-svelte-icons": "^2.0.2",
 		"globals": "^15.0.0",
 		"mdsvex": "^0.11.2",
 		"prettier": "^3.3.2",
