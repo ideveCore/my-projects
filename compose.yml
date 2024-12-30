@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:alpine
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: ${DATABASE_ROOTUSER}
+      POSTGRES_PASSWORD: ${DATABASE_ROOTPASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+          cpus: "0.7"
+        reservations:
+          memory: 50M
+          cpus: "0.3"
+    volumes:
+      - ./.database/volumes/init.sql:/docker-entrypoint-initdb.d/init.sql
