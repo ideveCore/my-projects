@@ -148,7 +148,7 @@
 						<p class="text-sm font-light text-gray-500 dark:text-gray-400">
 							Already have account?
 							<a
-								href="/auth/login"
+								href="/user/login"
 								class="font-medium text-primary-600 hover:underline dark:text-primary-500"
 							>
 								Sign-in
