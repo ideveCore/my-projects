@@ -25,17 +25,7 @@ export const load: PageServerLoad = async (event) => {
 			.from(table.user_preferences)
 			.where(eq(table.user_preferences.user_id, event.locals.user!.id));
 		const user_preferences = user_preferences_result.at(0) || {};
-		const user_bucket = await new Bucket().get({ user_id: event.locals.user!.id });
-		if ('email' in user) {
-			const avatar = (await user_bucket.get_file({ file_id: user.avatar }))!;
-			user.avatar = {
-				dir: avatar.dir,
-				name: avatar.name,
-				type: avatar.type,
-				size: avatar.size,
-				file: avatar.file
-			};
-		}
+		await new Bucket().get({ user_id: event.locals.user!.id });
 		return { user, user_preferences };
 	} else {
 		return { user: {}, user_preferences: {} };

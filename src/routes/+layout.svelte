@@ -40,7 +40,6 @@
 	};
 
 	onMount(() => {
-		console.log(data.user);
 		data.user_preferences.theme = data.user_preferences.theme
 			? data.user_preferences.theme
 			: 'auto';
@@ -66,7 +65,12 @@
 				>
 			</NavBrand>
 			<div class="flex items-center md:order-2">
-				<Avatar id="avatar-menu" border class="cursor-pointer" />
+				<Avatar
+					id="avatar-menu"
+					border
+					class="cursor-pointer"
+					src={data.user.avatar ? `/files/${data.user.avatar}` : undefined}
+				/>
 			</div>
 			<Dropdown placement="bottom" triggeredBy="#avatar-menu" bind:open={dropdown_open}>
 				<DropdownHeader>
