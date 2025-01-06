@@ -2,7 +2,7 @@
 	import { Section, Register } from 'flowbite-svelte-blocks';
 	import { Alert, Button, Helper, Input, Label, Popover } from 'flowbite-svelte';
 	import { CheckOutline, CloseOutline } from 'flowbite-svelte-icons';
-	import { Request } from '../../../../request';
+	import { Request } from '$lib/request';
 	import { validate } from '../../../../utils';
 
 	type UserInput = {

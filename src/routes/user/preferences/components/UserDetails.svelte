@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Section, Register } from 'flowbite-svelte-blocks';
 	import { Alert, Button, Fileupload, Input, Label, P } from 'flowbite-svelte';
-	import { Request } from '../../../../request';
+	import { Request } from '$lib/request';
 
 	let { data } = $props();
 	let user_name: { value: string } = $state({

@@ -6,7 +6,7 @@ import * as table from '$lib/server/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validate, uuid } from '../../../utils';
-import { Bucket, multer_middleware } from '../../../bucket';
+import { Bucket, multer_middleware } from '../../../lib/buckets/bucket';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -18,21 +18,25 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	register: async (event) => {
 		const formData = await event.request.formData();
-		const redirect_to = formData.get("redirect")?.toString() || "/";
+		const redirect_to = formData.get('redirect')?.toString() || '/';
 
 		if (event.locals.user) {
-			const name = formData.get('name')?.toString() || "";
-			const old_password = formData.get('old_password')?.toString() || "";
-			const password = formData.get('password')?.toString() || "";
-			const birth_date = formData.get('birth_date')?.toString() || "";
-			const avatar = formData.get('avatar');
+			const name = formData.get('name')?.toString() || '';
+			const old_password = formData.get('old_password')?.toString() || '';
+			const password = formData.get('password')?.toString() || '';
+			const birth_date = formData.get('birth_date')?.toString() || '';
+			const avatar = formData.get('avatar') as File;
 
-			const user_result = await db.select().from(table.user).where(eq(table.user.id, event.locals.user!.id));
+			const user_result = await db
+				.select()
+				.from(table.user)
+				.where(eq(table.user.id, event.locals.user!.id));
 			const user = user_result.at(0);
 			const update_data: {
 				name?: string | undefined;
 				birth_date?: string;
-				passwordHash?: string
+				passwordHash?: string;
+				avatar?: string;
 			} = {};
 
 			if (!user) {
@@ -56,9 +60,13 @@ export const actions: Actions = {
 					parallelism: 1
 				});
 				update_data.passwordHash = password_hash;
-			} else if ((old_password.length > 0 && password.length === 0) ||
-				(password.length > 0 && old_password.length == 0)) {
-				return fail(400, { message: 'For password exchange the two fields need to be filled in correctness!' });
+			} else if (
+				(old_password.length > 0 && password.length === 0) ||
+				(password.length > 0 && old_password.length == 0)
+			) {
+				return fail(400, {
+					message: 'For password exchange the two fields need to be filled in correctness!'
+				});
 			}
 
 			if (name) {
@@ -73,19 +81,19 @@ export const actions: Actions = {
 			}
 
 			try {
+				const bucket = await new Bucket().get({ user_id: user.id });
+				const bucket_file = await bucket.do_file({ dir: 'user_preferences', file: avatar });
+				if ('id' in bucket_file!) {
+					update_data.avatar = bucket_file.id;
+				}
 				await db.update(table.user).set(update_data).where(eq(table.user.id, user.id));
-				const bucket = await new Bucket({ user_id: user.id }).get();
-				// multer_middleware(event.request, event.locals, "/user_preferences", bucket, async () => {
-				// 	console.log("finished!");
-				// });
-				bucket.operations().mkfil_bucket('user_preferences', avatar);
 			} catch (e) {
 				return fail(500, { message: 'An error has occurred' });
 			}
 		} else {
-			const name = formData.get('name')?.toString() || "";
-			const email = formData.get('email')?.toString() || "";
-			const password = formData.get('password')?.toString() || "";
+			const name = formData.get('name')?.toString() || '';
+			const email = formData.get('email')?.toString() || '';
+			const password = formData.get('password')?.toString() || '';
 
 			if (!validate.email(email)) {
 				return fail(400, { message: 'Invalid email' });

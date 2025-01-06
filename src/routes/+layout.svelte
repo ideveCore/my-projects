@@ -40,6 +40,7 @@
 	};
 
 	onMount(() => {
+		console.log(data.user);
 		data.user_preferences.theme = data.user_preferences.theme
 			? data.user_preferences.theme
 			: 'auto';
