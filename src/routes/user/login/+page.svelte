@@ -2,17 +2,16 @@
 	import { Section, Register } from 'flowbite-svelte-blocks';
 	import { Button, Label, Input, Alert } from 'flowbite-svelte';
 	import { EnvelopeSolid } from 'flowbite-svelte-icons';
-	import { Request } from '../../../request';
+	import { Request } from '$lib';
 
-	let remember = $state(1);
 	let login_message: { error: string; success: string } = $state({
 		error: '',
 		success: ''
 	});
 
-	const do_login = async (event: SubmitEvent) => {
-		event.preventDefault();
-		const response = await new Request({ url: '?/login' }).form(event.target);
+	const do_login = async ({ target, preventDefault }: SubmitEvent) => {
+		preventDefault();
+		const response = await new Request({ url: '?/login' }).form(target!);
 		const message = response.data ? JSON.parse(response.data) : 'Success login';
 		login_message.error =
 			typeof message == 'object' ? message[1] : (window.location.href = response.location);
@@ -29,7 +28,6 @@
 				</svelte:fragment>
 				<div class="space-y-4 p-4 sm:p-8 md:space-y-6">
 					<form method="post" action="?/login" class="flex flex-col space-y-3" onsubmit={do_login}>
-						<input type="hidden" name="remember" bind:value={remember} />
 						<h3 class="p-0 text-2xl font-bold text-gray-900 dark:text-white">Sign-in</h3>
 						<Label class="space-y-2">
 							<span>Your email</span>

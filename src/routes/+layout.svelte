@@ -115,6 +115,8 @@
 				</li>
 				<DropdownDivider />
 				<DropdownItem href="/user/preferences">Preferences</DropdownItem>
+				<DropdownDivider />
+				<DropdownItem href="/user/logout">Logout</DropdownItem>
 			</Dropdown>
 		</Navbar>
 	{/if}

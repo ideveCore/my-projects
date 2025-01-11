@@ -27,7 +27,7 @@
 			return;
 		}
 
-		const response = await new Request({ url: '/user/register?/register=' }).form(event.target);
+		const response = await new Request({ url: '/user/register?/update=' }).form(event.target);
 		const message = response.data ? JSON.parse(response.data) : 'Success login';
 		if (typeof message == 'object') {
 			messages.error = message[1];

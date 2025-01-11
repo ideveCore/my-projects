@@ -2,58 +2,74 @@
 	import { Section, Register } from 'flowbite-svelte-blocks';
 	import { Alert, Button, Helper, Input, Label, Popover } from 'flowbite-svelte';
 	import { EnvelopeSolid, CheckOutline, CloseOutline } from 'flowbite-svelte-icons';
-	import type { ActionData } from './$types';
 	import { validate } from '../../../utils';
+	import { Request } from '$lib';
 
-	type UserInput = {
+	type FormInput = {
 		value: string;
 	};
 
 	let password_details = $state(
+		// @ts-ignore
 		validate.password_test.validate('', { details: true }).reduce((acc, item) => {
 			acc[item.validation] = item;
 			return acc;
 		}, {})
 	);
-	let user_name: UserInput = $state({
+	let user_name: FormInput = $state({
 		value: ''
 	});
-	let user_email: UserInput = $state({
+	let user_email: FormInput = $state({
 		value: ''
 	});
-	let user_password: UserInput = $state({
+	let user_password: FormInput = $state({
 		value: ''
 	});
-	let user_password_confirm: UserInput = $state({
+	let user_password_confirm: FormInput = $state({
 		value: ''
 	});
-	let { form }: { form: ActionData } = $props();
+
+	let messages: { error: string; success: string } = $state({
+		error: '',
+		success: ''
+	});
 
 	$effect(() => {
 		password_details = validate.password_test
 			.validate(user_password.value, { details: true })
+			// @ts-ignore
 			.reduce((acc, item) => {
 				acc[item.validation] = item;
 				return acc;
 			}, {});
 	});
 
-	const on_register = (event: SubmitEvent) => {
+	const do_register = async (event: SubmitEvent) => {
+		event.preventDefault();
 		if (user_name.value.trim().length <= 3 || user_name.value.trim().length > 30) {
-			event.preventDefault();
+			messages.error = 'The name should contain between 4 and 30 characters';
 			return;
 		}
 		if (!validate.email(user_email.value)) {
-			event.preventDefault();
+			messages.error = 'The email is not valid';
 			return;
 		}
 		if (!validate.password(user_password.value)) {
-			event.preventDefault();
+			messages.error = 'The password does not follow the necessary rules';
 			return;
 		}
 		if (user_password_confirm.value != user_password.value) {
-			event.preventDefault();
+			messages.error = 'Password not match';
 			return;
+		}
+
+		const response = await new Request({ url: '?/register' }).form(event.target!);
+		const message = response.data ? JSON.parse(response.data) : 'Success login';
+
+		if (typeof message == 'object') {
+			messages.error = message[1];
+		} else {
+			window.location.href = response.location;
 		}
 	};
 </script>
@@ -71,7 +87,7 @@
 						method="post"
 						action="?/register"
 						class="flex flex-col space-y-2"
-						onsubmit={(event) => on_register(event)}
+						onsubmit={(event) => do_register(event)}
 					>
 						<h3 class="p-0 text-xl font-medium text-gray-900 dark:text-white">Sign-up</h3>
 						<Label class="space-y-1">
@@ -104,9 +120,7 @@
 							<EnvelopeSolid slot="left" class="h-5 w-5 text-gray-500 dark:text-gray-400" />
 						</Input>
 						{#if user_email.value.trim() != '' && !validate.email(user_email.value)}
-							<Helper color="red"
-								><span class="font-medium">The typed email is not valid</span>
-							</Helper>
+							<Helper color="red"><span class="font-medium">The email is not valid</span></Helper>
 						{/if}
 						<Label class="space-y-1">
 							<span>Your password</span>
@@ -121,7 +135,7 @@
 							/>
 							{#if user_password.value.trim() != '' && !validate.password(user_password.value)}
 								<Helper color="red"
-									><span class="font-medium">The password is not in accordance with the rules</span>
+									><span class="font-medium">The password does not follow the necessary rules</span>
 								</Helper>
 							{/if}
 						</Label>
@@ -140,7 +154,7 @@
 							/>
 							{#if user_password_confirm.value !== user_password.value}
 								<Helper class="mt-2" color="red"
-									><span class="font-medium">Password not match.</span>
+									><span class="font-medium">Password not match</span>
 								</Helper>
 							{/if}
 						</Label>
@@ -155,9 +169,11 @@
 							</a>
 						</p>
 					</form>
-					<Alert color="red">
-						<span class="font-medium">{form?.message ?? ''}</span>
-					</Alert>
+					{#if messages.error}
+						<Alert border color="red" onclick={() => (messages.error = '')}>
+							<span class="font-medium">{messages.error}</span>
+						</Alert>
+					{/if}
 					<Popover class="text-sm" triggeredBy="#password" placement="bottom">
 						<h3 class="font-semibold text-gray-900 dark:text-white">
 							Must have at least 8 characters

@@ -6,7 +6,7 @@ import * as table from '$lib/server/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { validate, uuid } from '../../../utils';
-import { Bucket, multer_middleware } from '../../../lib/buckets/bucket';
+import { Bucket } from '../../../lib/buckets/bucket';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
@@ -19,7 +19,39 @@ export const actions: Actions = {
 	register: async (event) => {
 		const formData = await event.request.formData();
 		const redirect_to = formData.get('redirect')?.toString() || '/';
+		const name = formData.get('name')?.toString() || '';
+		const email = formData.get('email')?.toString() || '';
+		const password = formData.get('password')?.toString() || '';
 
+		if (!validate.email(email)) {
+			return fail(400, { message: 'Invalid email' });
+		}
+		if (!validate.password(password)) {
+			return fail(400, { message: 'Invalid password' });
+		}
+
+		const user_id = uuid();
+		const passwordHash = await hash(password, {
+			memoryCost: 19456,
+			timeCost: 2,
+			outputLen: 32,
+			parallelism: 1
+		});
+
+		try {
+			await db.insert(table.user).values({ id: user_id, name, email, passwordHash });
+
+			const sessionToken = auth.generateSessionToken();
+			const session = await auth.createSession(sessionToken, user_id);
+			auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
+		} catch (e) {
+			return fail(500, { message: 'An error has occurred' });
+		}
+		return redirect(302, redirect_to);
+	},
+	update: async (event) => {
+		const formData = await event.request.formData();
+		const redirect_to = formData.get('redirect')?.toString() || '/';
 		if (event.locals.user) {
 			const name = formData.get('name')?.toString() || '';
 			const old_password = formData.get('old_password')?.toString() || '';
@@ -81,47 +113,20 @@ export const actions: Actions = {
 			}
 
 			try {
-				const bucket = await new Bucket().get({ user_id: user.id });
-				const bucket_file = await bucket.do_file({ dir: 'user_preferences', file: avatar });
-				if ('id' in bucket_file!) {
-					update_data.avatar = bucket_file.id;
+				if (avatar.size > 0 && avatar.name !== '') {
+					const bucket = await new Bucket().get({ user_id: user.id });
+					const bucket_file = await bucket.do_file({ dir: 'user_preferences', file: avatar });
+					if ('id' in bucket_file!) {
+						update_data.avatar = bucket_file.id;
+					}
 				}
 				await db.update(table.user).set(update_data).where(eq(table.user.id, user.id));
 			} catch (e) {
 				return fail(500, { message: 'An error has occurred' });
 			}
 		} else {
-			const name = formData.get('name')?.toString() || '';
-			const email = formData.get('email')?.toString() || '';
-			const password = formData.get('password')?.toString() || '';
-
-			if (!validate.email(email)) {
-				return fail(400, { message: 'Invalid email' });
-			}
-			if (!validate.password(password)) {
-				return fail(400, { message: 'Invalid password' });
-			}
-
-			const user_id = uuid();
-			const passwordHash = await hash(password, {
-				// recommended minimum parameters
-				memoryCost: 19456,
-				timeCost: 2,
-				outputLen: 32,
-				parallelism: 1
-			});
-
-			try {
-				await db.insert(table.user).values({ id: user_id, name, email, passwordHash });
-
-				const sessionToken = auth.generateSessionToken();
-				const session = await auth.createSession(sessionToken, user_id);
-				auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
-			} catch (e) {
-				return fail(500, { message: 'An error has occurred' });
-			}
+			return fail(500, { message: 'User not logged!' });
 		}
-
 		return redirect(302, redirect_to);
 	}
 };
